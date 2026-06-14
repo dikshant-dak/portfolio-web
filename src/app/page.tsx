@@ -52,7 +52,7 @@ export default function Home() {
       <ScrollProgress />
       <Navbar />
 
-      <main className="flex-1 w-full bg-grid-pattern relative min-h-screen">
+      <main className="flex-1 w-full bg-grid-pattern relative min-h-screen overflow-x-hidden">
         {/* Glow Radial Accents */}
         <div className="absolute top-0 left-1/4 w-150 h-150 bg-emerald-500/5 rounded-full blur-[120px] pointer-events-none" />
         <div className="absolute top-[30%] right-10 w-125 h-125 bg-emerald-500/3 rounded-full blur-[100px] pointer-events-none" />

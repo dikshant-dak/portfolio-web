@@ -39,6 +39,8 @@ html {
   background-color: #030014;
   color: #f4f4f5;
   min-height: 100%;
+  overflow-x: hidden;
+  width: 100%;
 }
 
 body {
@@ -47,6 +49,7 @@ body {
   font-family: var(--font-sans);
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
+  width: 100%;
 }
 
 /* Custom Scrollbar */

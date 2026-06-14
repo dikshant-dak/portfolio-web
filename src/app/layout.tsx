@@ -90,7 +90,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} min-h-full antialiased bg-background text-foreground`}
+      className={`${geistSans.variable} ${geistMono.variable} min-h-full antialiased bg-background text-foreground overflow-x-hidden w-full`}
       data-scroll-behavior="smooth"
     >
       <head>
@@ -99,7 +99,7 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
       </head>
-      <body className="min-h-full flex flex-col bg-transparent text-foreground antialiased">
+      <body className="min-h-full flex flex-col bg-transparent text-foreground antialiased overflow-x-hidden w-full">
         {children}
         <Analytics />
       </body>
