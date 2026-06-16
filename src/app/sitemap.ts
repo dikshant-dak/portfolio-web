@@ -2,7 +2,7 @@ import { MetadataRoute } from 'next';
 import { projects } from '@/data/portfolioData';
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const baseUrl = 'https://dikshantdak.com'; // User's custom domain name
+  const baseUrl = 'https://dikshantdak-portfolio.vercel.app';
 
   // Main page sitemaps
   const routes = [

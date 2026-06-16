@@ -1,18 +1,46 @@
-'use client';
+"use client";
 
-import { useRef, useMemo, useState, useEffect } from 'react';
-import { Canvas, useFrame } from '@react-three/fiber';
-import { MeshDistortMaterial } from '@react-three/drei';
-import * as THREE from 'three';
-import { MotionValue } from 'motion/react';
+import { useRef, useMemo, useState, useEffect } from "react";
+import { Canvas, useFrame, useThree } from "@react-three/fiber";
+import { MeshDistortMaterial } from "@react-three/drei";
+import * as THREE from "three";
+import { MotionValue } from "motion/react";
+
+// --- WebGL Disposal Helper ---
+// Runs inside the R3F Canvas context; disposes the renderer on unmount
+// to prevent context leaks when navigating away and back via client-side routing.
+function RendererDisposer() {
+  const { gl } = useThree();
+  useEffect(() => {
+    return () => {
+      // Dispose all cached objects, then force-lose the context so the
+      // next Canvas mount gets a completely fresh WebGL state.
+      gl.dispose();
+      const canvas = gl.domElement;
+      const ext =
+        canvas.getContext("webgl2")?.getExtension("WEBGL_lose_context") ??
+        canvas.getContext("webgl")?.getExtension("WEBGL_lose_context");
+      ext?.loseContext();
+    };
+  }, [gl]);
+  return null;
+}
 
 // --- Camera Rig for Cursor Tracking ---
 function CameraRig() {
   useFrame((state) => {
     const { x, y } = state.pointer; // Normalized cursor coordinates [-1, 1]
     // Smoothly interpolate camera position
-    state.camera.position.x = THREE.MathUtils.lerp(state.camera.position.x, x * 1.5, 0.05);
-    state.camera.position.y = THREE.MathUtils.lerp(state.camera.position.y, y * 1.2 + 0.5, 0.05);
+    state.camera.position.x = THREE.MathUtils.lerp(
+      state.camera.position.x,
+      x * 1.5,
+      0.05,
+    );
+    state.camera.position.y = THREE.MathUtils.lerp(
+      state.camera.position.y,
+      y * 1.2 + 0.5,
+      0.05,
+    );
     state.camera.lookAt(0, 0.5, 0);
   });
   return null;
@@ -32,7 +60,7 @@ function GridPlane() {
   return (
     <gridHelper
       ref={gridRef}
-      args={[40, 40, '#047857', '#18181b']}
+      args={[40, 40, "#047857", "#18181b"]}
       position={[0, -2.5, 0]}
     />
   );
@@ -41,13 +69,20 @@ function GridPlane() {
 // --- Floating Wireframe Nodes ---
 interface NodeProps {
   position: [number, number, number];
-  shape: 'icosahedron' | 'octahedron' | 'torus' | 'tetrahedron';
+  shape: "icosahedron" | "octahedron" | "torus" | "tetrahedron";
   rotationSpeed: [number, number, number];
   color: string;
   size: number;
 }
 
-function FloatingGeometry({ position, shape, rotationSpeed, color, size, isMobile }: NodeProps & { isMobile: boolean }) {
+function FloatingGeometry({
+  position,
+  shape,
+  rotationSpeed,
+  color,
+  size,
+  isMobile,
+}: NodeProps & { isMobile: boolean }) {
   const meshRef = useRef<THREE.Mesh>(null!);
 
   const responsivePosition = useMemo((): [number, number, number] => {
@@ -62,11 +97,21 @@ function FloatingGeometry({ position, shape, rotationSpeed, color, size, isMobil
 
   const geometry = useMemo(() => {
     switch (shape) {
-      case 'icosahedron': return new THREE.IcosahedronGeometry(responsiveSize, 0);
-      case 'octahedron': return new THREE.OctahedronGeometry(responsiveSize, 0);
-      case 'tetrahedron': return new THREE.TetrahedronGeometry(responsiveSize, 0);
-      case 'torus': return new THREE.TorusGeometry(responsiveSize, responsiveSize * 0.25, 8, 16);
-      default: return new THREE.IcosahedronGeometry(responsiveSize, 0);
+      case "icosahedron":
+        return new THREE.IcosahedronGeometry(responsiveSize, 0);
+      case "octahedron":
+        return new THREE.OctahedronGeometry(responsiveSize, 0);
+      case "tetrahedron":
+        return new THREE.TetrahedronGeometry(responsiveSize, 0);
+      case "torus":
+        return new THREE.TorusGeometry(
+          responsiveSize,
+          responsiveSize * 0.25,
+          8,
+          16,
+        );
+      default:
+        return new THREE.IcosahedronGeometry(responsiveSize, 0);
     }
   }, [shape, responsiveSize]);
 
@@ -77,7 +122,9 @@ function FloatingGeometry({ position, shape, rotationSpeed, color, size, isMobil
     meshRef.current.rotation.y += rotationSpeed[1] * 0.01;
     meshRef.current.rotation.z += rotationSpeed[2] * 0.005;
     // Float gently up/down
-    meshRef.current.position.y = responsivePosition[1] + Math.sin(t * 0.5 + responsivePosition[0] * 2) * 0.25;
+    meshRef.current.position.y =
+      responsivePosition[1] +
+      Math.sin(t * 0.5 + responsivePosition[0] * 2) * 0.25;
   });
 
   return (
@@ -88,7 +135,13 @@ function FloatingGeometry({ position, shape, rotationSpeed, color, size, isMobil
 }
 
 // --- Star Particle Field ---
-function ParticleField({ count = 1200, isMobile }: { count?: number; isMobile: boolean }) {
+function ParticleField({
+  count = 1200,
+  isMobile,
+}: {
+  count?: number;
+  isMobile: boolean;
+}) {
   const pointsRef = useRef<THREE.Points>(null!);
 
   const particleCount = isMobile ? Math.floor(count * 0.5) : count;
@@ -101,7 +154,7 @@ function ParticleField({ count = 1200, isMobile }: { count?: number; isMobile: b
       return seed / 4294967296;
     };
     for (let i = 0; i < particleCount; i++) {
-      arr[i * 3]     = (lcg() - 0.5) * (isMobile ? 18 : 35); // X
+      arr[i * 3] = (lcg() - 0.5) * (isMobile ? 18 : 35); // X
       arr[i * 3 + 1] = (lcg() - 0.5) * (isMobile ? 18 : 25); // Y
       arr[i * 3 + 2] = (lcg() - 0.5) * 25; // Z
     }
@@ -118,10 +171,7 @@ function ParticleField({ count = 1200, isMobile }: { count?: number; isMobile: b
   return (
     <points ref={pointsRef}>
       <bufferGeometry>
-        <bufferAttribute
-          attach="attributes-position"
-          args={[positions, 3]}
-        />
+        <bufferAttribute attach="attributes-position" args={[positions, 3]} />
       </bufferGeometry>
       <pointsMaterial
         color="#34d399"
@@ -136,7 +186,13 @@ function ParticleField({ count = 1200, isMobile }: { count?: number; isMobile: b
 }
 
 // --- Central Distorted Orb (Scroll-Reactive) ---
-function DistortedOrb({ scrollYProgress, isMobile }: { scrollYProgress: MotionValue<number>; isMobile: boolean }) {
+function DistortedOrb({
+  scrollYProgress,
+  isMobile,
+}: {
+  scrollYProgress: MotionValue<number>;
+  isMobile: boolean;
+}) {
   const meshRef = useRef<THREE.Mesh>(null!);
 
   useFrame((state) => {
@@ -147,12 +203,16 @@ function DistortedOrb({ scrollYProgress, isMobile }: { scrollYProgress: MotionVa
 
     // React to scroll progress: scale down, shift position right, and fade opacity
     const rawScroll = scrollYProgress.get(); // 0 (top) to 1 (scrolled)
-    const scroll = typeof rawScroll === 'number' && !isNaN(rawScroll) ? rawScroll : 0;
-    
+    const scroll =
+      typeof rawScroll === "number" && !isNaN(rawScroll) ? rawScroll : 0;
+
     // Scale: smaller starting scale on mobile to avoid overwhelming narrow screens
     const startScale = isMobile ? 0.85 : 1.5;
     const endScale = isMobile ? 0.25 : 0.3;
-    const scale = Math.max(startScale - scroll * (startScale - endScale), endScale);
+    const scale = Math.max(
+      startScale - scroll * (startScale - endScale),
+      endScale,
+    );
     meshRef.current.scale.set(scale, scale, scale);
 
     // Position: Shift X and Y responsively
@@ -192,24 +252,57 @@ function DistortedOrb({ scrollYProgress, isMobile }: { scrollYProgress: MotionVa
 }
 
 // --- Main 3D Hero Scene Canvas ---
-export default function HeroScene({ scrollYProgress }: { scrollYProgress: MotionValue<number> }) {
+export default function HeroScene({
+  scrollYProgress,
+}: {
+  scrollYProgress: MotionValue<number>;
+}) {
   const [isMobile, setIsMobile] = useState(false);
+  // Initialize with a unique timestamp so every component mount (including
+  // after client-side back-navigation) gets a different key, forcing React
+  // to fully re-create the Canvas fiber tree with a fresh WebGL context.
+  // Using a lazy initializer avoids calling setState inside a useEffect.
+  const [mountKey] = useState(() => Date.now());
 
   useEffect(() => {
     const handleResize = () => {
       setIsMobile(window.innerWidth < 768);
     };
     handleResize();
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
   }, []);
 
   // Pre-configured nodes positions and speeds
   const floatingNodes: NodeProps[] = [
-    { position: [-4, 2, -3], shape: 'torus', rotationSpeed: [0.3, 0.5, 0.1], color: '#34d399', size: 0.5 },
-    { position: [4, 1.5, -4], shape: 'icosahedron', rotationSpeed: [0.5, 0.2, 0.2], color: '#60a5fa', size: 0.6 },
-    { position: [-3, -1, -2], shape: 'octahedron', rotationSpeed: [0.2, 0.4, 0.5], color: '#a78bfa', size: 0.4 },
-    { position: [3, -1.2, -3], shape: 'tetrahedron', rotationSpeed: [0.4, 0.3, 0.3], color: '#f43f5e', size: 0.5 },
+    {
+      position: [-4, 2, -3],
+      shape: "torus",
+      rotationSpeed: [0.3, 0.5, 0.1],
+      color: "#34d399",
+      size: 0.5,
+    },
+    {
+      position: [4, 1.5, -4],
+      shape: "icosahedron",
+      rotationSpeed: [0.5, 0.2, 0.2],
+      color: "#60a5fa",
+      size: 0.6,
+    },
+    {
+      position: [-3, -1, -2],
+      shape: "octahedron",
+      rotationSpeed: [0.2, 0.4, 0.5],
+      color: "#a78bfa",
+      size: 0.4,
+    },
+    {
+      position: [3, -1.2, -3],
+      shape: "tetrahedron",
+      rotationSpeed: [0.4, 0.3, 0.3],
+      color: "#f43f5e",
+      size: 0.5,
+    },
   ];
 
   const lightIntensityMultiplier = isMobile ? 0.6 : 1.0;
@@ -217,29 +310,59 @@ export default function HeroScene({ scrollYProgress }: { scrollYProgress: Motion
   return (
     <div className="w-full h-full" aria-hidden="true">
       <Canvas
+        key={mountKey}
         camera={{ position: [0, 0.5, 5], fov: 60 }}
         gl={{ antialias: true, alpha: true }}
-        style={{ background: 'transparent' }}
+        style={{ background: "transparent" }}
+        onCreated={({ gl }) => {
+          gl.setClearColor(0x000000, 0);
+          gl.setClearAlpha(0);
+        }}
       >
+        {/* Disposes the WebGL context cleanly when this Canvas unmounts */}
+        <RendererDisposer />
+
         <ambientLight intensity={isMobile ? 0.5 : 0.4} />
-        
+
         {/* Directional light to guarantee baseline physical shading brightness */}
-        <directionalLight position={[5, 5, 5]} intensity={1.5} color="#ffffff" />
-        
+        <directionalLight
+          position={[5, 5, 5]}
+          intensity={1.5}
+          color="#ffffff"
+        />
+
         {/* Colorful lighting to highlight 3D shapes */}
-        <pointLight position={[-6, 4, 3]} intensity={5.0 * lightIntensityMultiplier} color="#10b981" decay={0} />
-        <pointLight position={[6, -4, 3]} intensity={4.0 * lightIntensityMultiplier} color="#8b5cf6" decay={0} />
-        <pointLight position={[0, 8, -2]} intensity={3.0 * lightIntensityMultiplier} color="#3b82f6" decay={0} />
-        
+        <pointLight
+          position={[-6, 4, 3]}
+          intensity={5.0 * lightIntensityMultiplier}
+          color="#10b981"
+          decay={0}
+        />
+        <pointLight
+          position={[6, -4, 3]}
+          intensity={4.0 * lightIntensityMultiplier}
+          color="#8b5cf6"
+          decay={0}
+        />
+        <pointLight
+          position={[0, 8, -2]}
+          intensity={3.0 * lightIntensityMultiplier}
+          color="#3b82f6"
+          decay={0}
+        />
+
         <CameraRig />
         <GridPlane />
         <ParticleField isMobile={isMobile} />
-        
+
         {floatingNodes.map((node, i) => (
           <FloatingGeometry key={i} {...node} isMobile={isMobile} />
         ))}
-        
-        <DistortedOrb scrollYProgress={scrollYProgress} isMobile={isMobile} />
+
+        <DistortedOrb
+          scrollYProgress={scrollYProgress}
+          isMobile={isMobile}
+        />
       </Canvas>
     </div>
   );

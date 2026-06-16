@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Analytics } from '@vercel/analytics/next';
+import { Analytics } from "@vercel/analytics/next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { personalInfo } from "@/data/portfolioData";
@@ -15,8 +15,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://dikshantdak-portfolio.vercel.app"),
   title: `${personalInfo.name} | ${personalInfo.title}`,
-  description: `${personalInfo.name} is a ${personalInfo.title} specializing in React 19, Next.js 16, TypeScript, Node.js, Fastify, GraphQL, PostgreSQL, Apache Kafka, Supabase, AWS, Google Cloud Platform, and Agentic AI/RAG.`,
+  description: `${personalInfo.name} is a ${personalInfo.title} specializing in React 19, Next.js 16, TypeScript, Backend Development, PostgreSQL, Apache Kafka, AWS, Google Cloud Platform, and Agentic AI/RAG.`,
   keywords: [
     "Full Stack Developer",
     "Next.js Developer",
@@ -24,15 +25,24 @@ export const metadata: Metadata = {
     "Node.js Developer",
     "Software Engineer",
     "Dikshant Dak",
+    "Dikshant Dak Portfolio",
+    "Dikshant Dak Developer",
+    "Dikshant Dak Senior Full Stack Engineer",
     "System Architect",
     "SaaS Developer",
-    "Kafka Engineer"
+    "Kafka Engineer",
   ],
   authors: [{ name: personalInfo.name }],
+  alternates: {
+    canonical: "/",
+  },
+  verification: {
+    google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION || "",
+  },
   openGraph: {
     title: `${personalInfo.name} | ${personalInfo.title}`,
     description: personalInfo.valueProp,
-    url: "https://dikshantdak.com", // update with user's domain later
+    url: "https://dikshantdak-portfolio.vercel.app",
     siteName: `${personalInfo.name} Portfolio`,
     locale: "en_US",
     type: "website",
@@ -43,11 +53,8 @@ export const metadata: Metadata = {
     description: personalInfo.valueProp,
   },
   icons: {
-    icon: [
-      { url: '/favicon.ico' },
-      { url: '/icon.png', type: 'image/png' }
-    ],
-    apple: '/icon.png',
+    icon: [{ url: "/favicon.ico" }, { url: "/icon.png", type: "image/png" }],
+    apple: "/icon.png",
   },
 };
 
@@ -57,35 +64,47 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   // Rich Structured JSON-LD Data for SEO indexing
-  const jsonLd = {
-    "@context": "https://schema.org",
-    "@type": "Person",
-    "name": personalInfo.name,
-    "jobTitle": personalInfo.title,
-    "url": "https://dikshantdak.com",
-    "email": personalInfo.email,
-    "telephone": personalInfo.phone,
-    "sameAs": [
-      personalInfo.github,
-      personalInfo.linkedin
-    ],
-    "description": personalInfo.valueProp,
-    "knowsAbout": [
-      "Software Engineering",
-      "React.js",
-      "Next.js",
-      "TypeScript",
-      "Node.js",
-      "Fastify",
-      "GraphQL",
-      "PostgreSQL",
-      "Apache Kafka",
-      "AWS",
-      "Google Cloud Platform",
-      "RAG Systems",
-      "Agentic AI"
-    ]
-  };
+  const jsonLd = [
+    {
+      "@context": "https://schema.org" as const,
+      "@type": "Person",
+      "@id": "https://dikshantdak-portfolio.vercel.app/#person",
+      name: personalInfo.name,
+      jobTitle: personalInfo.title,
+      url: "https://dikshantdak-portfolio.vercel.app",
+      email: personalInfo.email,
+      telephone: personalInfo.phone,
+      image: "https://dikshantdak-portfolio.vercel.app/icon.png",
+      sameAs: [personalInfo.github, personalInfo.linkedin],
+      description: personalInfo.valueProp,
+      knowsAbout: [
+        "Software Engineering",
+        "React.js",
+        "Next.js",
+        "TypeScript",
+        "Node.js",
+        "Fastify",
+        "GraphQL",
+        "PostgreSQL",
+        "Apache Kafka",
+        "AWS",
+        "Google Cloud Platform",
+        "RAG Systems",
+        "Agentic AI",
+      ],
+    },
+    {
+      "@context": "https://schema.org" as const,
+      "@type": "WebSite",
+      "@id": "https://dikshantdak-portfolio.vercel.app/#website",
+      url: "https://dikshantdak-portfolio.vercel.app",
+      name: `${personalInfo.name} Portfolio`,
+      description: personalInfo.valueProp,
+      publisher: {
+        "@id": "https://dikshantdak-portfolio.vercel.app/#person",
+      },
+    },
+  ];
 
   return (
     <html

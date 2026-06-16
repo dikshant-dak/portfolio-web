@@ -7,6 +7,6 @@ export default function robots(): MetadataRoute.Robots {
       allow: '/',
       disallow: '/_next/',
     },
-    sitemap: 'https://dikshantdak.com/sitemap.xml',
+    sitemap: 'https://dikshantdak-portfolio.vercel.app/sitemap.xml',
   };
 }

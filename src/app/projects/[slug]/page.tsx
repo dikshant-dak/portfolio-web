@@ -1,3 +1,8 @@
+import type { Metadata } from 'next';
+import { Suspense } from 'react';
+import PageContent from './PageContent';
+import { projects, personalInfo } from '@/data/portfolioData';
+
 export const unstable_instant = {
   prefetch: 'static',
   samples: [
@@ -11,10 +16,47 @@ export const unstable_instant = {
   ]
 };
 
-import { Suspense } from 'react';
-import PageContent from './PageContent';
+export async function generateStaticParams() {
+  return projects.map((project) => ({
+    slug: project.slug,
+  }));
+}
 
-export default async function ProjectPage({
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+  const project = projects.find((p) => p.slug === slug);
+  if (!project) return {};
+
+  const title = `${project.title} | ${personalInfo.name} Project`;
+  const description = `${project.role} for ${project.title}. ${project.description}`;
+  const url = `https://dikshantdak-portfolio.vercel.app/projects/${slug}`;
+
+  return {
+    title,
+    description,
+    alternates: {
+      canonical: url,
+    },
+    openGraph: {
+      title,
+      description,
+      url,
+      type: 'article',
+      siteName: `${personalInfo.name} Portfolio`,
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description,
+    },
+  };
+}
+
+export default function ProjectPage({
   params,
 }: {
   params: Promise<{ slug: string }>;
@@ -30,9 +72,37 @@ export default async function ProjectPage({
         </div>
       }
     >
-      {params.then(({ slug }) => (
-        <PageContent slug={slug} />
-      ))}
+      {params.then(({ slug }) => {
+        const project = projects.find((p) => p.slug === slug);
+        const jsonLd = project
+          ? {
+              "@context": "https://schema.org" as const,
+              "@type": "SoftwareApplication",
+              "name": project.title,
+              "description": project.description,
+              "applicationCategory": "BusinessApplication",
+              "operatingSystem": "All",
+              "creator": {
+                "@type": "Person",
+                "name": personalInfo.name,
+                "url": "https://dikshantdak-portfolio.vercel.app"
+              },
+              "screenshot": project.screenshots ? project.screenshots.map((s) => `https://dikshantdak-portfolio.vercel.app${s}`) : undefined,
+            }
+          : null;
+
+        return (
+          <>
+            {jsonLd && (
+              <script
+                type="application/ld+json"
+                dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+              />
+            )}
+            <PageContent slug={slug} />
+          </>
+        );
+      })}
     </Suspense>
   );
 }

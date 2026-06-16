@@ -1,8 +1,25 @@
 'use client';
 
-import { useRef, useMemo } from 'react';
-import { Canvas, useFrame } from '@react-three/fiber';
+import { useRef, useMemo, useEffect } from 'react';
+import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
+
+// Dispose the WebGL renderer on unmount to prevent context accumulation
+// when multiple SkillOrb canvases are created/destroyed during SPA navigation.
+function RendererDisposer() {
+  const { gl } = useThree();
+  useEffect(() => {
+    return () => {
+      gl.dispose();
+      const canvas = gl.domElement;
+      const ext =
+        canvas.getContext('webgl2')?.getExtension('WEBGL_lose_context') ??
+        canvas.getContext('webgl')?.getExtension('WEBGL_lose_context');
+      ext?.loseContext();
+    };
+  }, [gl]);
+  return null;
+}
 
 // Individual floating skill orb matching the category
 function SkillOrb({ shape, color }: { shape: string; color: string }) {
@@ -58,7 +75,12 @@ export function SkillOrbCanvas({ shape, color }: { shape: string; color: string 
         camera={{ position: [0, 0, 2.5], fov: 50 }}
         gl={{ antialias: true, alpha: true }}
         style={{ background: 'transparent' }}
+        onCreated={({ gl }) => {
+          gl.setClearColor(0x000000, 0);
+          gl.setClearAlpha(0);
+        }}
       >
+        <RendererDisposer />
         <ambientLight intensity={0.4} color="#ffffff" />
         <pointLight position={[2, 2, 2]} intensity={1.0} color={color} />
         <pointLight position={[-2, -2, -2]} intensity={0.5} color={color} />
