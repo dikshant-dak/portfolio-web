@@ -1,30 +1,11 @@
 "use client";
 
 import { useRef, useMemo, useState, useEffect } from "react";
-import { Canvas, useFrame, useThree } from "@react-three/fiber";
+import { Canvas, useFrame } from "@react-three/fiber";
 import { MeshDistortMaterial } from "@react-three/drei";
+import { usePathname } from "next/navigation";
 import * as THREE from "three";
 import { MotionValue } from "motion/react";
-
-// --- WebGL Disposal Helper ---
-// Runs inside the R3F Canvas context; disposes the renderer on unmount
-// to prevent context leaks when navigating away and back via client-side routing.
-function RendererDisposer() {
-  const { gl } = useThree();
-  useEffect(() => {
-    return () => {
-      // Dispose all cached objects, then force-lose the context so the
-      // next Canvas mount gets a completely fresh WebGL state.
-      gl.dispose();
-      const canvas = gl.domElement;
-      const ext =
-        canvas.getContext("webgl2")?.getExtension("WEBGL_lose_context") ??
-        canvas.getContext("webgl")?.getExtension("WEBGL_lose_context");
-      ext?.loseContext();
-    };
-  }, [gl]);
-  return null;
-}
 
 // --- Camera Rig for Cursor Tracking ---
 function CameraRig() {
@@ -257,12 +238,10 @@ export default function HeroScene({
 }: {
   scrollYProgress: MotionValue<number>;
 }) {
+  const pathname = usePathname();
   const [isMobile, setIsMobile] = useState(false);
-  // Initialize with a unique timestamp so every component mount (including
-  // after client-side back-navigation) gets a different key, forcing React
-  // to fully re-create the Canvas fiber tree with a fresh WebGL context.
-  // Using a lazy initializer avoids calling setState inside a useEffect.
-  const [mountKey] = useState(() => Date.now());
+  const [contextVersion, setContextVersion] = useState(0);
+  const isHomeRoute = pathname === "/";
 
   useEffect(() => {
     const handleResize = () => {
@@ -309,61 +288,70 @@ export default function HeroScene({
 
   return (
     <div className="w-full h-full" aria-hidden="true">
-      <Canvas
-        key={mountKey}
-        camera={{ position: [0, 0.5, 5], fov: 60 }}
-        gl={{ antialias: true, alpha: true }}
-        style={{ background: "transparent" }}
-        onCreated={({ gl }) => {
-          gl.setClearColor(0x000000, 0);
-          gl.setClearAlpha(0);
-        }}
-      >
-        {/* Disposes the WebGL context cleanly when this Canvas unmounts */}
-        <RendererDisposer />
+      {isHomeRoute && (
+        <Canvas
+          key={contextVersion}
+          camera={{ position: [0, 0.5, 5], fov: 60 }}
+          gl={{ antialias: true, alpha: true }}
+          style={{ background: "transparent", width: "100%", height: "100%" }}
+          onCreated={({ gl }) => {
+            gl.setClearColor(0x000000, 0);
+            gl.setClearAlpha(0);
+            gl.domElement.addEventListener(
+              "webglcontextlost",
+              (event) => {
+                event.preventDefault();
+                window.requestAnimationFrame(() => {
+                  setContextVersion((version) => version + 1);
+                });
+              },
+              { once: true },
+            );
+          }}
+        >
+          <ambientLight intensity={isMobile ? 0.5 : 0.4} />
 
-        <ambientLight intensity={isMobile ? 0.5 : 0.4} />
+          {/* Directional light to guarantee baseline physical shading brightness */}
+          <directionalLight
+            position={[5, 5, 5]}
+            intensity={1.5}
+            color="#ffffff"
+          />
 
-        {/* Directional light to guarantee baseline physical shading brightness */}
-        <directionalLight
-          position={[5, 5, 5]}
-          intensity={1.5}
-          color="#ffffff"
-        />
+          {/* Colorful lighting to highlight 3D shapes */}
+          <pointLight
+            position={[-6, 4, 3]}
+            intensity={5.0 * lightIntensityMultiplier}
+            color="#10b981"
+            decay={0}
+          />
+          <pointLight
+            position={[6, -4, 3]}
+            intensity={4.0 * lightIntensityMultiplier}
+            color="#8b5cf6"
+            decay={0}
+          />
+          <pointLight
+            position={[0, 8, -2]}
+            intensity={3.0 * lightIntensityMultiplier}
+            color="#3b82f6"
+            decay={0}
+          />
 
-        {/* Colorful lighting to highlight 3D shapes */}
-        <pointLight
-          position={[-6, 4, 3]}
-          intensity={5.0 * lightIntensityMultiplier}
-          color="#10b981"
-          decay={0}
-        />
-        <pointLight
-          position={[6, -4, 3]}
-          intensity={4.0 * lightIntensityMultiplier}
-          color="#8b5cf6"
-          decay={0}
-        />
-        <pointLight
-          position={[0, 8, -2]}
-          intensity={3.0 * lightIntensityMultiplier}
-          color="#3b82f6"
-          decay={0}
-        />
+          <CameraRig />
+          <GridPlane />
+          <ParticleField isMobile={isMobile} />
 
-        <CameraRig />
-        <GridPlane />
-        <ParticleField isMobile={isMobile} />
+          {floatingNodes.map((node, i) => (
+            <FloatingGeometry key={i} {...node} isMobile={isMobile} />
+          ))}
 
-        {floatingNodes.map((node, i) => (
-          <FloatingGeometry key={i} {...node} isMobile={isMobile} />
-        ))}
-
-        <DistortedOrb
-          scrollYProgress={scrollYProgress}
-          isMobile={isMobile}
-        />
-      </Canvas>
+          <DistortedOrb
+            scrollYProgress={scrollYProgress}
+            isMobile={isMobile}
+          />
+        </Canvas>
+      )}
     </div>
   );
 }

@@ -20,7 +20,7 @@ export default async function PageContent({ slug }: { slug: string }) {
     <>
       <Navbar />
 
-      <main className="flex-1 w-full bg-grid-pattern relative min-h-screen pt-24 pb-16 overflow-x-hidden">
+      <main className="flex-1 w-full bg-background bg-grid-pattern relative min-h-screen pt-24 pb-16 overflow-x-hidden">
         <div className="absolute top-0 left-1/4 w-150 h-150 bg-emerald-500/5 rounded-full blur-[120px] pointer-events-none" />
         
         <div className="max-w-4xl mx-auto px-6 space-y-12">

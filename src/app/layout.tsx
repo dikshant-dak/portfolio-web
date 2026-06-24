@@ -118,7 +118,10 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
       </head>
-      <body className="min-h-full flex flex-col bg-transparent text-foreground antialiased overflow-x-hidden w-full">
+      <body
+        className="min-h-full flex flex-col bg-background text-foreground antialiased overflow-x-hidden w-full"
+        style={{ backgroundColor: "#030014" }}
+      >
         {children}
         <Analytics />
       </body>

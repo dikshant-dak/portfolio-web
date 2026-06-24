@@ -52,12 +52,20 @@ export default function Home() {
       <ScrollProgress />
       <Navbar />
 
-      <main className="flex-1 w-full bg-grid-pattern relative min-h-screen overflow-x-hidden">
-        {/* Glow Radial Accents */}
-        <div className="absolute top-0 left-1/4 w-150 h-150 bg-emerald-500/5 rounded-full blur-[120px] pointer-events-none" />
-        <div className="absolute top-[30%] right-10 w-125 h-125 bg-emerald-500/3 rounded-full blur-[100px] pointer-events-none" />
+      <main className="flex-1 w-full bg-background bg-grid-pattern relative isolate min-h-screen overflow-x-hidden">
+        {/* Opaque route background; keeps the dark theme stable even while WebGL is mounting. */}
+        <div className="fixed inset-0 z-0 bg-background bg-grid-pattern pointer-events-none" aria-hidden="true" />
 
-        <div className="max-w-6xl mx-auto px-6 space-y-24 md:space-y-32 py-24 md:py-36">
+        {/* Full-viewport 3D scene */}
+        <div className="fixed inset-0 z-0 pointer-events-none">
+          <HeroSceneDynamic scrollYProgress={smoothHeroProgress} />
+        </div>
+
+        {/* Glow Radial Accents */}
+        <div className="absolute top-0 left-1/4 z-10 w-150 h-150 bg-emerald-500/5 rounded-full blur-[120px] pointer-events-none" />
+        <div className="absolute top-[30%] right-10 z-10 w-125 h-125 bg-emerald-500/3 rounded-full blur-[100px] pointer-events-none" />
+
+        <div className="relative z-20 max-w-6xl mx-auto px-6 space-y-24 md:space-y-32 py-24 md:py-36">
 
           {/* ── 1. HERO SECTION ── */}
           <section
@@ -66,11 +74,6 @@ export default function Home() {
             className="flex flex-col gap-6 items-start relative max-w-4xl pt-10"
             style={{ minHeight: '80vh' }}
           >
-            {/* Full-viewport 3D scene */}
-            <div className="fixed inset-0 -z-10 pointer-events-none">
-              <HeroSceneDynamic scrollYProgress={smoothHeroProgress} />
-            </div>
-
             {/* Parallax hero content */}
             <motion.div
               style={{ y: heroY, opacity: heroOpa }}
